@@ -10,12 +10,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import dev.jorel.commandapi.CommandAPI;
 import playerstoragev2.events.JoinEvent;
 import playerstoragev2.events.LeaveEvent;
-import playerstoragev2.sql.Conn;
-import playerstoragev2.sql.sqlHandler;
-import playerstoragev2.storage.Loader;
 import playerstoragev2.storage.PlayerS;
 import playerstoragev2.storage.Storage;
-import playerstoragev2.storage.oldStorage;
 import playerstoragev2.util.addCell;
 import playerstoragev2.util.defaultCell;
 import playerstoragev2.mongodb.antilogger;
@@ -26,20 +22,18 @@ import playerstoragev2.mongodb.mdbStettings;
 public class PlayerStorage extends JavaPlugin {
 
     public HashMap<String, PlayerS> players;
-    ArrayList<Loader> loaders;
+
     HashMap<String, Class<?>> storageCells;
 
     private static PlayerStorage instance;
 
-    sqlHandler sql;
     protected Storage storage;
-    protected playerstoragev2.storage.oldStorage oldStorage;
 
     boolean debug = true;
     boolean loadOnJoin = false;
 
     Config configuration;
-    Conn connection;
+
     mdbStettings Mdb;
 
     @Override
@@ -53,7 +47,6 @@ public class PlayerStorage extends JavaPlugin {
         // init variables
         players = new HashMap<String, PlayerS>();
         storageCells = new HashMap<String, Class<?>>();
-        loaders = new ArrayList<Loader>();
 
         // diffrent plugin settings (sql,...)
         saveDefaultConfig();
@@ -62,24 +55,13 @@ public class PlayerStorage extends JavaPlugin {
         // disable mongodb logger
         antilogger.disableMbdLogging();
 
-        // sql connection
-        connection = new Conn();
         Mdb = new mdbStettings();
 
         // load configuration from file
-        configuration.load(getConfig(), connection, Mdb);
-
-        // init sql connection
-        try {
-            sql = new sqlHandler(connection);
-            sql.createIfNot();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        configuration.load(getConfig(), Mdb);
 
         // players loader
-        storage = new Storage(sql, Mdb);
-        oldStorage = new oldStorage(sql, Mdb);
+        storage = new Storage(Mdb);
 
         // registerStorageCell(defaultCell.class, "test");
         // register events
@@ -98,9 +80,9 @@ public class PlayerStorage extends JavaPlugin {
                 debug("[saver] unloading..");
                 try {
                     // migration from sql to mariadb
-                    //sql.openConnection();
-                    //sql.migrate();
-                    //sql.closeConnection();
+                    // sql.openConnection();
+                    // sql.migrate();
+                    // sql.closeConnection();
 
                     PlayerStorage.getInstance().players.forEach((name, player) -> {
 
@@ -181,23 +163,12 @@ public class PlayerStorage extends JavaPlugin {
         return instance;
     }
 
-    @Deprecated
-    public static void addLoader(Loader loader) {
-        getInstance().loaders.add(loader);
-    }
-
-    public static void addStorageCell(Class cell, String pluginName) {
+    public static void addStorageCell(Class<?> cell, String pluginName) {
         // add storage cell for each player
         getInstance().storageCells.put(pluginName, cell);
     }
 
-    @Deprecated
-    public static ArrayList<Loader> getLoaders() {
-         return getInstance().loaders;
-        
-    }
-
-    public static void registerStorageCell(Class cell, String pluginName) {
+    public static void registerStorageCell(Class<?> cell, String pluginName) {
         // add storage cell for each player
         getInstance().storageCells.put(pluginName, cell);
     }
@@ -220,19 +191,6 @@ public class PlayerStorage extends JavaPlugin {
         if (player == null) {
             // load player from database(or create new one)
             getInstance().storage.load(name);
-            player = getInstance().players.get(name);
-        }
-        return player;
-    }
-
-    @Deprecated
-    public static PlayerS oldgetPlayer(String name) {
-        // try to load player
-        PlayerS player = getInstance().players.get(name);
-        // if player isnt loaded, then player will be null
-        if (player == null) {
-            // load player from database(or create new one)
-            getInstance().oldStorage.load(name);
             player = getInstance().players.get(name);
         }
         return player;
@@ -266,7 +224,7 @@ public class PlayerStorage extends JavaPlugin {
     }
 
     static void reloadCfg() {
-        getInstance().configuration.load(getInstance().getConfig(), getInstance().connection, getInstance().Mdb);
+        getInstance().configuration.load(getInstance().getConfig(), getInstance().Mdb);
     }
 
 }

@@ -15,15 +15,13 @@ import org.bson.Document;
 
 import playerstoragev2.PlayerStorage;
 import playerstoragev2.mongodb.mdbStettings;
-import playerstoragev2.sql.sqlHandler;
 
 public class Storage {
 
-    sqlHandler sql;
     mdbStettings Mdb;
 
-    public Storage(sqlHandler sq, mdbStettings mdb) {
-        this.sql = sq;
+    public Storage(mdbStettings mdb) {
+
         this.Mdb = mdb;
     }
 

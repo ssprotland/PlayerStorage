@@ -3,16 +3,8 @@ package playerstoragev2;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import playerstoragev2.mongodb.mdbStettings;
-import playerstoragev2.sql.Conn;
-
 public class Config {
-    public void load(FileConfiguration config, Conn sql, mdbStettings Mdb) {
-
-        sql.host = config.getString("SQL.host");
-        sql.port = config.getString("SQL.port");
-        sql.database = config.getString("SQL.database");
-        sql.username = config.getString("SQL.username");
-        sql.password = config.getString("SQL.password");
+    public void load(FileConfiguration config, mdbStettings Mdb) {
 
         Mdb.host = config.getString("mongoDB.host");
         Mdb.port = config.getString("mongoDB.port");
