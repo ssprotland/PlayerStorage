@@ -1,0 +1,7 @@
+main: playerstoragev2.PlayerStorage
+name: PlayerStorageV2
+version: 0.1
+api-version: 1.16
+prefix: playerStorageV2
+depend:
+  - CommandAPI
