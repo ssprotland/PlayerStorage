@@ -1,11 +1,5 @@
 debug: true
 loadOnJoin: true
-SQL:
-  host: "192.168.88.240"
-  port: "3306"
-  database: "playerStorage"
-  username: "playerStorage"
-  password: "pwd123"
 mongoDB:
   host: "192.168.88.240"
   port: "27017"

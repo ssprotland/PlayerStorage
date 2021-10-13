@@ -15,15 +15,13 @@ import org.bson.Document;
 
 import playerstoragev2.PlayerStorage;
 import playerstoragev2.mongodb.mdbStettings;
-import playerstoragev2.sql.sqlHandler;
 
 public class Storage {
 
-    sqlHandler sql;
     mdbStettings Mdb;
 
-    public Storage(sqlHandler sq, mdbStettings mdb) {
-        this.sql = sq;
+    public Storage(mdbStettings mdb) {
+
         this.Mdb = mdb;
     }
 
@@ -35,8 +33,12 @@ public class Storage {
 
         for (String cellName : player.getStorageCells().keySet()) {
             StorageCell cell = player.getStorageCell(cellName);
-            info += cellName;
-            info += cell.toString() + "\n";
+            info += cellName + ": ";
+            
+            Document doc = new Document();
+            serialize(cell.getClass().getFields(), cell, doc);
+            
+            info += doc.toJson() + "\n";
         }
         return info;
     }
