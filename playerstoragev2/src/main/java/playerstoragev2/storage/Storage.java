@@ -33,8 +33,12 @@ public class Storage {
 
         for (String cellName : player.getStorageCells().keySet()) {
             StorageCell cell = player.getStorageCell(cellName);
-            info += cellName;
-            info += cell.toString() + "\n";
+            info += cellName + ": ";
+            
+            Document doc = new Document();
+            serialize(cell.getClass().getFields(), cell, doc);
+            
+            info += doc.toJson() + "\n";
         }
         return info;
     }
