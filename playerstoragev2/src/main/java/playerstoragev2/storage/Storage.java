@@ -34,10 +34,10 @@ public class Storage {
         for (String cellName : player.getStorageCells().keySet()) {
             StorageCell cell = player.getStorageCell(cellName);
             info += cellName + ": ";
-            
+
             Document doc = new Document();
             serialize(cell.getClass().getFields(), cell, doc);
-            
+
             info += doc.toJson() + "\n";
         }
         return info;
@@ -77,7 +77,7 @@ public class Storage {
                 Field[] fields = storagecell.getClass().getDeclaredFields();
 
                 // unserialization(with recursion)
-                unSerialize(fields, storagecell, cellDoc);
+                deSerialize(fields, storagecell, cellDoc);
 
             });
             mongoClient.close();
@@ -136,7 +136,7 @@ public class Storage {
     }
 
     @SuppressWarnings("unchecked")
-    void unSerialize(Field[] fields, StorageCell cell, Document doc) {
+    void deSerialize(Field[] fields, StorageCell cell, Document doc) {
 
         for (Field f : fields) {
             f.setAccessible(true);
@@ -185,7 +185,7 @@ public class Storage {
                     try {
                         Document innerDoc = (Document) doc.get(f.getName());
                         PlayerStorage.debug("recursion!");
-                        unSerialize(innerFields, innerCell, innerDoc);// recursion!
+                        deSerialize(innerFields, innerCell, innerDoc);// recursion!
                         PlayerStorage.debug("exit!");
                     } catch (Exception e) {
                     }
@@ -193,16 +193,20 @@ public class Storage {
                 } else if (f.get(cell) instanceof ArrayList) {
 
                     // array thats needs to be filled up
-                    List<Object> array = (ArrayList<Object>) f.get(cell);
+                    ArrayList<Object> array = (ArrayList<Object>) f.get(cell);
 
                     // check type of object that is contained in arraylist
                     if (!(array.get(0) instanceof StorageCell)) {
                         if (array.get(0) instanceof Number || array.get(0) instanceof String) {
-                            array.clear(); // remove firs temporary element
-
+                            array.clear();// remove temporary element
                             try {
-                                array = (List<Object>) doc.get(f.getName());// use embeded deserializer
+
+                                PlayerStorage.debug(doc.toString());
+                                array = (ArrayList<Object>) doc.get(f.getName());// use embeded deserializer
+                                f.set(cell, array);
+
                             } catch (Exception e) {
+                                PlayerStorage.debug(e.toString());
                             }
                         }
                         continue;
@@ -223,7 +227,7 @@ public class Storage {
                         StorageCell innerCell = (StorageCell) clazz.getDeclaredConstructor().newInstance();
 
                         Field[] innerFields = innerCell.getClass().getDeclaredFields();
-                        unSerialize(innerFields, innerCell, innerDoc);
+                        deSerialize(innerFields, innerCell, innerDoc);
                         array.add(innerCell);
                     }
 
@@ -296,9 +300,11 @@ public class Storage {
                     PlayerStorage.debug("Array!");
 
                     List<Object> array = (ArrayList<Object>) f.get(cell);
+                    PlayerStorage.debug("size of array: " + array.size());
 
                     if (array.isEmpty()) {
                         doc.append(f.getName(), f.get(cell));// use embeded serializer(just create empty array)
+                        PlayerStorage.debug("Empty array!");
                         continue;
                     }
 
@@ -306,9 +312,12 @@ public class Storage {
                         // check if array contains numbers or strings
                         if (array.get(0) instanceof Number || array.get(0) instanceof String) {
                             doc.append(f.getName(), f.get(cell));// use embeded serializer
+                            PlayerStorage.debug("contains strings or numbers!");
                         }
+                        PlayerStorage.debug("cant be serialized");
                         continue; // skip cuz this cant be serialized
                     }
+                    PlayerStorage.debug("contains StorageCell");
                     // create document list
                     List<Document> docList = new ArrayList<Document>();
                     // recursivly serialize
