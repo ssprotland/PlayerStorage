@@ -211,6 +211,10 @@ public class Storage {
                         }
                         continue;
                     }
+                    // skip loop if doc is empty
+                    if (doc == null) {
+                        continue;
+                    }
 
                     // document list that represent objects
                     List<Document> list = (List<Document>) doc.get(f.getName());
@@ -313,8 +317,9 @@ public class Storage {
                         if (array.get(0) instanceof Number || array.get(0) instanceof String) {
                             doc.append(f.getName(), f.get(cell));// use embeded serializer
                             PlayerStorage.debug("contains strings or numbers!");
+                        } else {
+                            PlayerStorage.debug("cant be serialized");
                         }
-                        PlayerStorage.debug("cant be serialized");
                         continue; // skip cuz this cant be serialized
                     }
                     PlayerStorage.debug("contains StorageCell");
