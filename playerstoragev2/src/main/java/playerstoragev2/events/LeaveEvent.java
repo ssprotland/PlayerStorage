@@ -6,7 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import playerstoragev2.PlayerStorage;
-import playerstoragev2.storage.Storage;
+import playerstoragev2.storage.db.Storage;
 
 public class LeaveEvent implements Listener {
     Storage storage;
@@ -24,7 +24,7 @@ public class LeaveEvent implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(PlayerStorage.getInstance(), new Runnable() {
             @Override
             public void run() {
-                storage.unload(playerName);
+                storage.save(PlayerStorage.getOnlinePlayer(playerName));
             }
         });
     }

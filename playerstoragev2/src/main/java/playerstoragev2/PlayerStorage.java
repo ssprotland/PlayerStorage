@@ -11,7 +11,8 @@ import dev.jorel.commandapi.CommandAPI;
 import playerstoragev2.events.JoinEvent;
 import playerstoragev2.events.LeaveEvent;
 import playerstoragev2.storage.PlayerS;
-import playerstoragev2.storage.Storage;
+import playerstoragev2.storage.db.Storage;
+import playerstoragev2.storage.db.mongodb;
 import playerstoragev2.util.addCell;
 import playerstoragev2.util.defaultCell;
 import playerstoragev2.mongodb.antilogger;
@@ -21,13 +22,13 @@ import playerstoragev2.mongodb.mdbStettings;
 
 public class PlayerStorage extends JavaPlugin {
 
-    public HashMap<String, PlayerS> players;
+    public HashMap<String, PlayerS> cache;
 
     HashMap<String, Class<?>> storageCells;
 
     private static PlayerStorage instance;
 
-    protected Storage storage;
+    private static Storage storage;
 
     boolean debug = true;
     boolean loadOnJoin = false;
@@ -37,15 +38,11 @@ public class PlayerStorage extends JavaPlugin {
     mdbStettings Mdb;
 
     @Override
-    public void onLoad() {
-    }
-
-    @Override
     public void onEnable() {
         getLogger().info("launching......");
         instance = this;
         // init variables
-        players = new HashMap<String, PlayerS>();
+        cache = new HashMap<String, PlayerS>();
         storageCells = new HashMap<String, Class<?>>();
 
         // diffrent plugin settings (sql,...)
@@ -61,7 +58,7 @@ public class PlayerStorage extends JavaPlugin {
         configuration.load(getConfig(), Mdb);
 
         // players loader
-        storage = new Storage(Mdb);
+        storage = new mongodb(Mdb);
 
         // registerStorageCell(defaultCell.class, "test");
         // register events
@@ -84,11 +81,10 @@ public class PlayerStorage extends JavaPlugin {
                     // sql.migrate();
                     // sql.closeConnection();
 
-                    PlayerStorage.getInstance().players.forEach((name, player) -> {
-
+                    PlayerStorage.getInstance().cache.forEach((name, player) -> {
                         Player Pplayer = Bukkit.getPlayer(name);
                         if (Pplayer == null) {
-                            PlayerStorage.getInstance().storage.unload(name);
+                            PlayerStorage.save(player);
                         }
                     });
                 } catch (Exception e) {
@@ -101,11 +97,10 @@ public class PlayerStorage extends JavaPlugin {
         // testing();
     }
 
-    void testing() {
+    private void testing() {
         debug("testing...");
-        storage.load("test");
-
-        defaultCell cell = (defaultCell) getOnlinePlayer("test").getStorageCell("test");
+        PlayerS player = getPlayer("test");
+        defaultCell cell = (defaultCell) player.getStorageCell("test");
 
         cell.array.forEach(element -> {
             debug(Integer.toString(element));
@@ -130,7 +125,7 @@ public class PlayerStorage extends JavaPlugin {
         addcell.flot = 6;
         // cell.array2.add(addcell);
 
-        storage.unload("test");
+        storage.save(player);
         debug("done!");
     }
 
@@ -140,13 +135,11 @@ public class PlayerStorage extends JavaPlugin {
         // save all
         // when last element is removed, then foreach will throw exeption
         log("[disable] saving...");
-        try {
-            PlayerStorage.getInstance().players.forEach((name, player) -> {
-                PlayerStorage.getInstance().storage.unload(name);
-            });
-        } catch (Exception e) {
-            log("[disable] done!");
-        }
+        PlayerStorage.getInstance().cache.forEach((name, player) -> {
+            PlayerStorage.save(player);
+        });
+
+        log("[disable] done!");
     }
 
     public static void log(String log) {
@@ -177,21 +170,30 @@ public class PlayerStorage extends JavaPlugin {
         return getInstance().storageCells;
     }
 
+    // =========================API==============================
+    /**
+     * 
+     * @param name
+     * @return
+     */
+    public static String info(String name) {
+        return storage.info(name);
+    }
+
     /**
      * returns player. if not already loaded, load from storage. Do not use if u
      * dont need offline player!
      * 
-     * @param name of player
+     * @param name - name of player
      * @return player
      */
     public static PlayerS getPlayer(String name) {
         // try to load player
-        PlayerS player = getInstance().players.get(name);
+        PlayerS player = getInstance().cache.get(name);
         // if player isnt loaded, then player will be null
         if (player == null) {
             // load player from database(or create new one)
-            getInstance().storage.load(name);
-            player = getInstance().players.get(name);
+            player = storage.load(name);
         }
         return player;
     }
@@ -200,20 +202,65 @@ public class PlayerStorage extends JavaPlugin {
      * returns player. if not already loaded, returns null. Always try to use this
      * methot!
      * 
-     * @param name of player
+     * @param name - name of player
      * @return player
      */
     public static PlayerS getOnlinePlayer(String name) {
-        return getInstance().players.get(name);
+        return getInstance().cache.get(name);
     }
 
+    /**
+     * loads player (or creates new one) from db and saves it in cache
+     * 
+     * @param name - name of player to load
+     */
+    public static void load(String name) {
+        PlayerS player = getInstance().cache.get(name);
+        if (player == null) {
+            // load player from database(or create new one)
+            player = storage.load(name);
+            getInstance().cache.put(name, player);
+        }
+    }
+
+    /**
+     * saves player by name
+     * 
+     * @param name - name of player to save
+     */
+    public static void save(String name) {
+        PlayerS player = getInstance().cache.get(name);
+        storage.save(player);
+    }
+
+    /**
+     * saves player
+     * 
+     * @param player - player to save
+     */
+    public static void save(PlayerS player) {
+        storage.save(player);
+    }
+
+    /**
+     * save player to db and remove from cache
+     * 
+     * @param player
+     */
+
+    public static void unload(PlayerS player) {
+        storage.save(player);
+        getInstance().cache.remove(player.getName());
+    }
+
+    // =======================================================
     @FunctionalInterface
     public interface foreach {
         public void load(String name, PlayerS player);
     }
 
     public static void forEachPlayer(foreach loader) {
-        getInstance().players.forEach((name, player) -> {
+        getInstance().cache.forEach((name, player) -> {
             loader.load(name, player);
         });
 
