@@ -17,11 +17,11 @@ public class cmd {
     public static void save(CommandSender sender) {
         sender.sendMessage("saving...");
         try {
-            PlayerStorage.getInstance().players.forEach((name, player) -> {
-                PlayerStorage.getInstance().storage.unload(name);
+            PlayerStorage.getInstance().cache.forEach((name, player) -> {
+                PlayerStorage.save(player);
             });
         } catch (Exception e) {
-            //e.printStackTrace();
+            // e.printStackTrace();
         }
         sender.sendMessage("done!");
     }
@@ -29,15 +29,14 @@ public class cmd {
     @Subcommand("save")
     public static void save(CommandSender sender, @APlayerArgument Player player) {
         sender.sendMessage("saving...");
-        PlayerStorage.getInstance().storage.unload(player.getName());
-        PlayerStorage.getInstance().storage.load(player.getName());
+        PlayerStorage.save(player.getName());
         sender.sendMessage("done!");
     }
 
     @Subcommand("load")
     public static void load(CommandSender sender, @AStringArgument String player) {
         sender.sendMessage("loading...");
-        PlayerStorage.getInstance().storage.load(player);
+        PlayerStorage.getPlayer(player);
         sender.sendMessage("done!");
     }
 
@@ -52,7 +51,7 @@ public class cmd {
     @Subcommand("info")
     public static void print(CommandSender sender, @AStringArgument String player) {
         sender.sendMessage("======info about player " + player + "======");
-        sender.sendMessage(PlayerStorage.getInstance().storage.info(player));
+        sender.sendMessage(PlayerStorage.info(player));
         sender.sendMessage("=========================================");
     }
 

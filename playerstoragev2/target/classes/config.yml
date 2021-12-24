@@ -1,5 +1,6 @@
 debug: true
 loadOnJoin: true
+storage: json mongo
 mongoDB:
   host: "192.168.88.240"
   port: "27017"

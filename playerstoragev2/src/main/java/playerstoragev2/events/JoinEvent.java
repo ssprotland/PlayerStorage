@@ -6,7 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import playerstoragev2.PlayerStorage;
-import playerstoragev2.storage.Storage;
+import playerstoragev2.storage.db.Storage;
 
 public class JoinEvent implements Listener {
     Storage storage;

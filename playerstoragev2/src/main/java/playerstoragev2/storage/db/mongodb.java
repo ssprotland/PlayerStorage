@@ -1,4 +1,4 @@
-package playerstoragev2.storage;
+package playerstoragev2.storage.db;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -15,12 +15,14 @@ import org.bson.Document;
 
 import playerstoragev2.PlayerStorage;
 import playerstoragev2.mongodb.mdbStettings;
+import playerstoragev2.storage.PlayerS;
+import playerstoragev2.storage.StorageCell;
 
-public class Storage {
+public class mongodb implements Storage {
 
     mdbStettings Mdb;
 
-    public Storage(mdbStettings mdb) {
+    public mongodb(mdbStettings mdb) {
 
         this.Mdb = mdb;
     }
@@ -43,10 +45,12 @@ public class Storage {
         return info;
     }
 
-    public void load(String playerName) {
+    @Override
+    public PlayerS load(String playerName) {
 
         PlayerStorage.debug("===========loading=========");
         PlayerS player = new PlayerS();
+        player.setName(playerName);
 
         // get db url
         String connectionString = "mongodb://" + Mdb.username + ":" + Mdb.password + "@" + Mdb.host + ":" + Mdb.port
@@ -85,14 +89,12 @@ public class Storage {
         // return logging
 
         // save player
-        PlayerStorage.getInstance().players.put(playerName, player);
-
         PlayerStorage.debug("===========loading done!=========");
-
+        return player;
     }
 
-    public void unload(String playerName) {
-        PlayerS player = PlayerStorage.getPlayer(playerName);
+    @Override
+    public void save(PlayerS player) {
         PlayerStorage.debug("=============unloading===========");
 
         // get db url
@@ -109,7 +111,7 @@ public class Storage {
 
             // generate player's document
             Document playerDoc = new Document();
-            playerDoc.append("name", playerName);
+            playerDoc.append("name", player.getName());
             // for each storage cell create coresponding document
 
             player.getStorageCells().forEach((pluginName, storagecell) -> {
@@ -126,12 +128,9 @@ public class Storage {
             // do insert in to db
             ReplaceOptions update = new ReplaceOptions();
             update = update.upsert(true);
-            players.replaceOne(new Document("name", playerName), playerDoc, update);
+            players.replaceOne(new Document("name", player.getName()), playerDoc, update);
             mongoClient.close();
         }
-
-        // remove record
-        PlayerStorage.getInstance().players.remove(playerName);
         PlayerStorage.debug("===========unloading done!========");
     }
 
